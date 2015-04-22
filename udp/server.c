@@ -55,6 +55,7 @@ int main(int argc,  const char *argv[])
         }
         packer[ret] = '\0';
 
+
         printf("---------------------------\n");
         printf("ip      :%s\n", inet_ntoa(peer_addr.sin_addr));
         printf("prot    :%d\n", ntohs(peer_addr.sin_port));
@@ -66,6 +67,10 @@ int main(int argc,  const char *argv[])
         if (-1 == ret){
             perror("Fail to sendto");
             exit(EXIT_FAILURE);
+        }
+        if (strncmp(packer,"quit",4) == 0)
+        {
+            printf("%s:%d quit\n",inet_ntoa(peer_addr.sin_addr),ntohs(peer_addr.sin_port));
         }
     }
     close(sockfd);

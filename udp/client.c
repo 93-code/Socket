@@ -56,6 +56,10 @@ int main(int argc,  const char *argv[])
             perror("Fail to sendto");
             exit(EXIT_FAILURE);
         }
+        if (strncmp(packer,"quit",4) == 0)
+        {
+            break;
+        }
         printf("ret = %d\n",ret);
         //recv
         ret = recvfrom(sockfd, packer, sizeof(packer), 0, (struct sockaddr *)&server_addr, &addrlen);
