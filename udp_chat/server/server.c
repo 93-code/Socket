@@ -11,9 +11,17 @@
 
 #include "client_link_list.h"
 
-void broadcast_list(int sockfd, const char *packet, int len, CLIENT)
+void broadcast_list(int sockfd, const char *packet, int len, CLIENT *head)
 {
-
+    int index = 0;
+    struct sockaddr_in peer_addr;
+    while (1){
+        client_link_get_for_index(head, index, peer_addr.ip, peer_addr.port, peer_addr.name);
+        sendto(sockfd, packet, len, 0, peer_addr, sizeof(peer_addr));
+        ++index;
+    }
+    return;
+    
 }
 int main(int argc, const char *argv[])
 {

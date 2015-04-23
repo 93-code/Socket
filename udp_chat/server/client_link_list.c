@@ -60,7 +60,18 @@ void client_link_del(CLIENT *head, const char *ip, unsigned short port);
     return;
 }
 
-int client_link_get_for_index(CLIENT *head, int index, char *ip, unsigned short *port)
+int client_link_get_for_index(CLIENT *head, int index, char *ip, unsigned short *port, char *name)
 {
-    
+    CLIENT *p = head->next;
+    int i = 1;    
+    for (i = 1; i <= index; i++)
+    {
+       p = p->next; 
+    }
+
+    strcpy(ip,p->ip);
+    strcpy(name,p->name);
+    *port = p->port;
+
+    return 0;
 }
