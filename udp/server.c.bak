@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <string.h>
 #include <strings.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -15,8 +14,9 @@ int main(int argc,  const char *argv[])
     int sockfd;
     char packer[1024];
     struct sockaddr_in server_addr;
+    struct sockaddr_in peer_addr;
 
-    socklen_t addrlen = sizeof(server_addr);
+    socklen_t addrlen = sizeof(peer_addr);
     
     if (argc < 3){
         fprintf(stderr, "Usage: %s <ip> <port>\n",argv[0]);
@@ -37,33 +37,17 @@ int main(int argc,  const char *argv[])
     server_addr.sin_addr.s_addr = inet_addr(argv[1]);
 
     //bind ip and port;
-    /*ret = bind(sockfd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));*/
-    /*if (-1 == ret){*/
-        /*perror("Fail to bind");*/
-        /*exit(EXIT_FAILURE);*/
-    /*}*/
+    ret = bind(sockfd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
+    if (-1 == ret){
+        perror("Fail to bind");
+        exit(EXIT_FAILURE);
+    }
 
     //recv and send packet;
-    sendto(sockfd, "hello", 5, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
-        printf("Input msg:\n");
     while (1)
     {
-
-        //send
-        fgets(packer,sizeof(packer),stdin);
-        printf("+++++++++++++++++++++++\n");
-        ret = sendto(sockfd, packer , strlen(packer)-1, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
-        if (-1 == ret){
-            perror("Fail to sendto");
-            exit(EXIT_FAILURE);
-        }
-        if (strncmp(packer,"quit",4) == 0)
-        {
-            break;
-        }
-        printf("ret = %d\n",ret);
         //recv
-        ret = recvfrom(sockfd, packer, sizeof(packer), 0, (struct sockaddr *)&server_addr, &addrlen);
+        ret = recvfrom(sockfd, packer, sizeof(packer), 0, (struct sockaddr *)&peer_addr, &addrlen);
         if (-1 == ret)
         {
             perror("Fail to recvfrom");
@@ -71,12 +55,23 @@ int main(int argc,  const char *argv[])
         }
         packer[ret] = '\0';
 
+
         printf("---------------------------\n");
-        printf("ip      :%s\n", inet_ntoa(server_addr.sin_addr));
-        printf("prot    :%d\n", ntohs(server_addr.sin_port));
+        printf("ip      :%s\n", inet_ntoa(peer_addr.sin_addr));
+        printf("prot    :%d\n", ntohs(peer_addr.sin_port));
         printf("recv[%d]:%s\n", ret, packer);
         printf("---------------------------\n");
 
+        //send
+        ret = sendto(sockfd, packer , ret, 0, (struct sockaddr *)&peer_addr, sizeof(peer_addr));
+        if (-1 == ret){
+            perror("Fail to sendto");
+            exit(EXIT_FAILURE);
+        }
+        if (strncmp(packer,"quit",4) == 0)
+        {
+            printf("%s:%d quit\n",inet_ntoa(peer_addr.sin_addr),ntohs(peer_addr.sin_port));
+        }
     }
     close(sockfd);
 
