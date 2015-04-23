@@ -1,0 +1,80 @@
+/* 20:27 2015-04-23 Thursday */
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <strings.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include "client_link_list.h"
+
+void broadcast_list(int sockfd, const char *packet, int len, CLIENT)
+{
+
+}
+int main(int argc, const char *argv[])
+{
+    
+    int ret = 0;
+    int sockfd;
+    char packet[1024];
+    struct sockaddr_in server_addr;
+    struct sockaddr_in peer_addr;
+    socklen_t addrlen = sizeof(peer_addr);
+    
+    CLIENT head;
+    if (argv < 3){
+        fprintf(stderr, "Usage: %s <ip> <port>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    client_link_init(&head);
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (-1 == sockfd){
+        perror("Fail to socket");
+        exit(EXIT_FAILURE);
+    }
+
+    bzero(&server_addr, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(atoi(argv[2]));
+    server_addr.sin_addr.s_addr = inet_addr(argv[1]);
+
+    ret = bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    if (-1 == ret){
+        perror("Fail to bind");
+        exit(EXIT_FAILURE);
+    }
+
+    while (1){
+        ret = recvfrom(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)&peer_addr, &addrlen);
+        if (-1 == ret){
+            perror("Fail to bind");
+            break;
+        }
+        packet[ret] = '\0';
+
+        printf("========================\n");
+        printf("ip      :%s\n", inet_ntoa(peer_addr.sin_addr));
+        printf("port    :%d\n", ntohs(peer_addr.sin_port));
+        printf("recv(%d):%s\n", ret, packet);
+        printf("========================\n");
+
+        if (strncmp(packet, "quit", 4) == 0){
+            ret = sendto(sockfd, packet, ret, 0, (struct sockaddr *)&peer_addr, sizeof(peer_addr));
+            if (-1 == ret){
+                perror("Fail to sendto");
+                break;
+            }
+            client_link_del(&head, inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port));
+        }else{
+            client_link_add(&head, inet_ntoa(peer_addr,sin_addr), ntohs(peer_addr.sin_port), "");
+            broadcast_list(sockfd, packet, ret, &head);
+        }
+    }
+
+    return 0;
+}
