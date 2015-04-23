@@ -44,6 +44,7 @@ int main(int argc,  const char *argv[])
     /*}*/
 
     //recv and send packet;
+    sendto(sockfd, "hello", 5, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
         printf("Input msg:\n");
     while (1)
     {
