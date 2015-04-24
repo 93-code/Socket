@@ -16,5 +16,5 @@ void client_link_add(CLIENT *head, const char *ip, unsigned short port, const ch
 void client_link_del(CLIENT *head, const char *ip, unsigned short port);
 int client_link_total(CLIENT *head);
 int client_link_get_for_index(CLIENT *head, int index, char *ip, unsigned short *port, char *name);
-void client_link_get_name_for_addr(CLIENT *head, char *ip, unsigned short *port, char *name);
+void client_link_get_name_for_addr(CLIENT *head, char *ip, unsigned short port, char *name);
 //#endif
