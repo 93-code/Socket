@@ -19,11 +19,11 @@ int main(int argc,  const char *argv[])
     struct sockaddr_in server_addr;
 
     socklen_t addrlen = sizeof(server_addr);
-    
+
     if (argc < 3){
         fprintf(stderr, "Usage: %s <ip> <port>\n",argv[0]);
         exit(EXIT_FAILURE);
-        }
+    }
 
     //create and open socket;
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -41,57 +41,64 @@ int main(int argc,  const char *argv[])
     //bind ip and port;
     /*ret = bind(sockfd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));*/
     /*if (-1 == ret){*/
-        /*perror("Fail to bind");*/
-        /*exit(EXIT_FAILURE);*/
+    /*perror("Fail to bind");*/
+    /*exit(EXIT_FAILURE);*/
     /*}*/
 
     //recv and send packet;
     /*sendto(sockfd, "hello", 5, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));*/
-        printf("Input msg:\n");
-    while (1)
+    printf("Input msg:\n");
+    pid = fork();
+    if (pid < 0)
     {
+        perror("Fail to fork");
+        exit(EXIT_FAILURE);
+    }
 
-        //send
-        pid = fork();
-        if (pid > 0){
-        fgets(packer,sizeof(packer),stdin);
-        printf("+++++++++++++++++++++++\n");
-        ret = sendto(sockfd, packer , strlen(packer)-1, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
-        if (-1 == ret){
-            perror("Fail to sendto");
-            exit(EXIT_FAILURE);
+    //send
+    if (pid > 0){
+        while (1){
+            fgets(packer,sizeof(packer),stdin);
+            printf("+++++++++++++++++++++++\n");
+            ret = sendto(sockfd, packer , strlen(packer)-1, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+            if (-1 == ret){
+                perror("Fail to sendto");
+                exit(EXIT_FAILURE);
+            }
+            if (strncmp(packer,"quit",4) == 0)
+            {
+                waitpid(pid, NULL, 0);
+                break;
+            }
+            /*printf("ret = %d\n",ret);*/
+            //recv
         }
-        if (strncmp(packer,"quit",4) == 0)
+    }
+    if (pid == 0){
+        while (1)
         {
-            break;
-        }
-        /*printf("ret = %d\n",ret);*/
-        //recv
-        }
-        if (pid == 0){
-        ret = recvfrom(sockfd, packer, sizeof(packer), 0, (struct sockaddr *)&server_addr, &addrlen);
-        printf("I have recv\n");
-        if (-1 == ret)
-        {
-            perror("Fail to recvfrom");
-            break;
-        }
-        packer[ret] = '\0';
+            ret = recvfrom(sockfd, packer, sizeof(packer), 0, (struct sockaddr *)&server_addr, &addrlen);
+            printf("I have recv\n");
+            if (-1 == ret)
+            {
+                perror("Fail to recvfrom");
+                break;
+            }
+            packer[ret] = '\0';
 
-        printf("---------------------------\n");
-        printf("ip      :%s\n", inet_ntoa(server_addr.sin_addr));
-        printf("prot    :%d\n", ntohs(server_addr.sin_port));
-        printf("recv[%d]:%s\n", ret, packer);
-        printf("---------------------------\n");
-        if (strncmp(packer,"quit",4) == 0)
-        {
-            break;
-        }
+            printf("---------------------------\n");
+            printf("ip      :%s\n", inet_ntoa(server_addr.sin_addr));
+            printf("prot    :%d\n", ntohs(server_addr.sin_port));
+            printf("recv[%d]:%s\n", ret, packer);
+            printf("---------------------------\n");
+            if (strncmp(packer,"quit",4) == 0)
+            {
+                exit(EXIT_SUCCESS);
+            }
         }
 
     }
-    wait(NULL);
-    wait(NULL);
+
     close(sockfd);
 
     return 0;
