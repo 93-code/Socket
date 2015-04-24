@@ -21,11 +21,11 @@ void client_link_add(CLIENT *head, const char *ip, unsigned short port, const ch
 
     while (*p != NULL)
     {
-        if ((strcmp(ip,*p->ip) == 0) && (port == *p->port)){
+        if ((strcmp(ip,(*p)->ip) == 0) && (port == (*p)->port)){
             return;
         }
         else{
-            p = &(*p->next);
+            p = &((*p)->next);
         }
     }
     
@@ -34,37 +34,48 @@ void client_link_add(CLIENT *head, const char *ip, unsigned short port, const ch
     strcpy(new->name,name);
     new->port = port;
 
-    *p->next = new;
+    *p = new;
 
     return; 
 }
 
-void client_link_del(CLIENT *head, const char *ip, unsigned short port);
+void client_link_del(CLIENT *head, const char *ip, unsigned short port)
 {
-    CLIENT *t;
-    CLIENT **p = &(head->next); 
+    CLIENT *p,*q;
 
-    while (*p != NULL)
-    {
-        if ((strcmp(ip,*p->ip) == 0) && (port == *p->port))
+    for (q = head, p = head->next; p != NULL; q = p, p = p->next){
+        if ((strcmp(ip,p->ip) == 0) && (port == p->port))
         {
-           t = *p; 
-           p = &(*p->next);
-           free(t);
+            printf("port : (*p)->port = %d : %d\n",port, p->port );
+            q->next = p->next;
+            free(p);
+            printf("delete success!\n");
         }
-        else
-        {
-            p = &(*p->next);
-        }
+
     }
+
     return;
+}
+
+int client_link_total(CLIENT *head)
+{
+    int num = 0;
+    CLIENT *p = head->next;
+
+    while (p != NULL)
+    {
+        num++;
+        p = p->next;
+    }
+
+    return num;
 }
 
 int client_link_get_for_index(CLIENT *head, int index, char *ip, unsigned short *port, char *name)
 {
     CLIENT *p = head->next;
     int i = 1;    
-    for (i = 1; i <= index; i++)
+    for (i = 1; i < index; i++)
     {
        p = p->next; 
     }
