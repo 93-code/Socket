@@ -13,22 +13,30 @@
 
 void broadcast_list(int sockfd, const char *packet, int len, CLIENT *head)
 {
-    int index = 0;
+    int index = 1;
+    int num;
     char ip[16];
     unsigned short port;
     char name[32];
     struct sockaddr_in peer_addr;
     
-    bzero(&peer_addr,sizeof(peer_addr));
+    bzero(&peer_addr, sizeof(peer_addr));
     peer_addr.sin_family = AF_INET;
 
+    num = client_link_total(head);
+    printf("%d client online\n",num);
     while (1){
         client_link_get_for_index(head, index, ip, &port, name);
         peer_addr.sin_addr.s_addr = inet_addr(ip);
         peer_addr.sin_port = htons(port);
         sendto(sockfd, packet, len, 0, (struct sockaddr *)&peer_addr, sizeof(peer_addr));
+        /*printf("I had sendto\n");*/
         ++index;
+
+        if (index > num)
+            break;
     }
+    /*printf("sendto over\n");*/
     return;
     
 }
@@ -87,6 +95,7 @@ int main(int argc, const char *argv[])
                 break;
             }
             client_link_del(&head, inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port));
+            printf("%s quit\n",inet_ntoa(peer_addr.sin_addr));
         }else{
             client_link_add(&head, inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port), "");
             broadcast_list(sockfd, packet, ret, &head);

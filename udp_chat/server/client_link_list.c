@@ -86,3 +86,17 @@ int client_link_get_for_index(CLIENT *head, int index, char *ip, unsigned short 
 
     return 0;
 }
+
+void client_link_get_name_for_addr(CLIENT *head, char *ip, unsigned short *port, char *name){
+    CLIENT *p = head->next;
+
+    while (p != NULL){
+        if ((strcmp(ip,p->ip) == 0) && (port == p->port)){
+            strcpy(name,p->name);
+            break;
+        }
+        p = p->next;
+    }
+
+    return;
+}
