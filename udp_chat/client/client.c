@@ -49,7 +49,7 @@ int main(int argc,  const char *argv[])
     name[strlen(name) - 1] = '\0';
 
     len = packet_login(packet, name);
-    ret = sendto(sockfd, packet, len, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    ret = sendto(sockfd, packet, len, 0, (struct sockaddr *)&server_addr, addrlen);
     if (-1 == ret){
         perror("Fail to sendto");
         exit(EXIT_FAILURE);
@@ -68,14 +68,14 @@ int main(int argc,  const char *argv[])
         while (1){
             putchar('\r');
             putchar('>');
-            fgets(packet,sizeof(context),stdin);
+            fgets(context, sizeof(context), stdin);
 
             if (strncmp(context, "quit", 4) == 0){
                 len = packet_quit(packet);
             }else{
                 len = packet_chat(packet, context);
             }
-            ret = sendto(sockfd, packet, len, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+            ret = sendto(sockfd, packet, len, 0, (struct sockaddr *)&server_addr, addrlen);
             if (-1 == ret){
                 perror("Fail to sendto");
                 exit(EXIT_FAILURE);
@@ -92,7 +92,7 @@ int main(int argc,  const char *argv[])
         while (1)
         {
             ret = recvfrom(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)&server_addr, &addrlen);
-            printf("I have recv\n");
+            /*printf("I have recv\n");*/
             if (-1 == ret)
             {
                 perror("Fail to recvfrom");
@@ -111,6 +111,7 @@ int main(int argc,  const char *argv[])
             {
                 exit(EXIT_SUCCESS);
             }
+            write(1, ">", 1);
         }
 
     }
