@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 
 #include "client_link_list.h"
+#include "protocol.h"
 
 void broadcast_list(int sockfd, const char *packet, int len, CLIENT *head)
 {
@@ -19,7 +20,7 @@ void broadcast_list(int sockfd, const char *packet, int len, CLIENT *head)
     unsigned short port;
     char name[32];
     struct sockaddr_in peer_addr;
-    
+
     bzero(&peer_addr, sizeof(peer_addr));
     peer_addr.sin_family = AF_INET;
 
@@ -38,18 +39,22 @@ void broadcast_list(int sockfd, const char *packet, int len, CLIENT *head)
     }
     /*printf("sendto over\n");*/
     return;
-    
+
 }
 int main(int argc, const char *argv[])
 {
-    
+
     int ret = 0;
     int sockfd;
+    int func;
+    int len;
+    char name[32];
     char packet[1024];
+    char context[1024];
     struct sockaddr_in server_addr;
     struct sockaddr_in peer_addr;
     socklen_t addrlen = sizeof(peer_addr);
-    
+
     CLIENT head;
     if (argc < 3){
         fprintf(stderr, "Usage: %s <ip> <port>\n", argv[0]);
@@ -88,19 +93,28 @@ int main(int argc, const char *argv[])
         printf("recv(%d):%s\n", ret, packet);
         printf("========================\n");
 
-        if (strncmp(packet, "quit", 4) == 0){
-            ret = sendto(sockfd, packet, ret, 0, (struct sockaddr *)&peer_addr, sizeof(peer_addr));
-            if (-1 == ret){
-                perror("Fail to sendto");
+
+        func = packet_get_func(packet);
+
+        switch (func){
+        case FUNC_LOGIN:
+            packet_get_context(packet, name);
+            client_link_add(&head, inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port), name);
+            break;
+        case FUNC_CHAT:
+            client_link_get_name_for_addr(&head, inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port), name);
+            sprintf(context, "%s>", name);
+            packet_get_context(packet, context+strlen(context));
+            len = packet_chat(packet, context);
+            broadcast_list(sockfd, packet, len, &head);
                 break;
-            }
+        case FUNC_QUIT:
             client_link_del(&head, inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port));
-            printf("%s quit\n",inet_ntoa(peer_addr.sin_addr));
-        }else{
-            client_link_add(&head, inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port), "");
-            broadcast_list(sockfd, packet, ret, &head);
+            break;
+        default:
+            break;
         }
     }
-
+    close(sockfd);
     return 0;
 }

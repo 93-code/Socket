@@ -8,13 +8,18 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <signal.h>
+#include "protocol.h"
 
 // ./server 127.0.0.1 8888
 int main(int argc,  const char *argv[])
 {
     int ret = 0;
     int sockfd;
-    char packer[1024];
+    int len;
+    char name[32];
+    char packet[1024];
+    char context[1024];
     pid_t pid;
     struct sockaddr_in server_addr;
 
@@ -38,16 +43,19 @@ int main(int argc,  const char *argv[])
     server_addr.sin_port = htons(atoi(argv[2]));
     server_addr.sin_addr.s_addr = inet_addr(argv[1]);
 
-    //bind ip and port;
-    /*ret = bind(sockfd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));*/
-    /*if (-1 == ret){*/
-    /*perror("Fail to bind");*/
-    /*exit(EXIT_FAILURE);*/
-    /*}*/
+    //login:
+    write(1, "login:", 7);
+    fgets(name, sizeof(name), stdin);
+    name[strlen(name) - 1] = '\0';
 
-    //recv and send packet;
-    /*sendto(sockfd, "hello", 5, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));*/
-    printf("Input msg:\n");
+    len = packet_login(packet, name);
+    ret = sendto(sockfd, packet, len, 0, (struct sockaddr *)&server_addr, addrlen);
+    if (-1 == ret){
+        perror("Fail to sendto");
+        exit(EXIT_FAILURE);
+    }
+    
+   //chat: 
     pid = fork();
     if (pid < 0)
     {
@@ -58,43 +66,52 @@ int main(int argc,  const char *argv[])
     //send
     if (pid > 0){
         while (1){
-            fgets(packer,sizeof(packer),stdin);
-            printf("+++++++++++++++++++++++\n");
-            ret = sendto(sockfd, packer , strlen(packer)-1, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+            putchar('\r');
+            putchar('>');
+            fgets(context, sizeof(context), stdin);
+
+            if (strncmp(context, "quit", 4) == 0){
+                len = packet_quit(packet);
+            }else{
+                len = packet_chat(packet, context);
+            }
+            ret = sendto(sockfd, packet, len, 0, (struct sockaddr *)&server_addr, addrlen);
             if (-1 == ret){
                 perror("Fail to sendto");
                 exit(EXIT_FAILURE);
             }
-            if (strncmp(packer,"quit",4) == 0)
-            {
+
+            if (strncmp(context, "quit", 4) == 0){
+                kill(pid, SIGKILL);
                 waitpid(pid, NULL, 0);
                 break;
             }
-            /*printf("ret = %d\n",ret);*/
-            //recv
         }
     }
     if (pid == 0){
         while (1)
         {
-            ret = recvfrom(sockfd, packer, sizeof(packer), 0, (struct sockaddr *)&server_addr, &addrlen);
-            printf("I have recv\n");
+            ret = recvfrom(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)&server_addr, &addrlen);
+            /*printf("I have recv\n");*/
             if (-1 == ret)
             {
                 perror("Fail to recvfrom");
                 break;
             }
-            packer[ret] = '\0';
+            packet[ret] = '\0';
+
+            packet_get_context(packet, context);
 
             printf("---------------------------\n");
             printf("ip      :%s\n", inet_ntoa(server_addr.sin_addr));
             printf("prot    :%d\n", ntohs(server_addr.sin_port));
-            printf("recv[%d]:%s\n", ret, packer);
+            printf("recv[%d]:%s\n", (int)strlen(context), context);
             printf("---------------------------\n");
-            if (strncmp(packer,"quit",4) == 0)
+            if (strncmp(packet,"quit",4) == 0)
             {
                 exit(EXIT_SUCCESS);
             }
+            write(1, ">", 1);
         }
 
     }
