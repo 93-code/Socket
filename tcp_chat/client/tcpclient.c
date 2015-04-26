@@ -8,6 +8,16 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
+
+void *handler(void *arg){
+    char buf[1024];
+    int sockfd = (int)(long int)arg;
+    while (1){
+        recv(sockfd, buf, sizeof(buf), 0);
+        printf("recv(%d) : %s\n", strlen(buf), buf);
+    }
+}
 
 int main(int argc, const char *argv[])
 {
@@ -18,6 +28,7 @@ int main(int argc, const char *argv[])
 
     int ret;
     int sockfd;
+    pthread_t tid;
     char buf[1024];
     struct sockaddr_in server_addr;
     socklen_t addrlen = sizeof(server_addr);
@@ -39,6 +50,9 @@ int main(int argc, const char *argv[])
         exit(EXIT_FAILURE);
     }
 
+        //recv pthread;
+        pthread_create(&tid, NULL, handler, (void *)(long int)sockfd);
+        pthread_detach(tid);
     while (1){
         putchar('\r');
         putchar('>');
@@ -48,7 +62,6 @@ int main(int argc, const char *argv[])
 
         send(sockfd, buf, strlen(buf), 0);
         
-        /*recv(sockfd, buf, sizeof(buf), 0);*/
         if (strncmp(buf, "quit", 4) == 0){
             break;
         }

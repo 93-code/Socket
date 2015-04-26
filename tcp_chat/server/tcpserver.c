@@ -8,23 +8,37 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include "clientlink.h"
+
+CLIENT head; 
+void broadcast_msg(CLIENT *head, char *buf, int len){
+    CLIENT *p = head->next;
+
+    while (p != NULL){
+        send(p->clientfd, buf, len, 0);
+        p = p->next;
+    }
+}
 
 void *handler(void *arg){
+    CLIENT *p;
     int clientfd = (int)(long int)arg;
     char buf[1024];
     int bsize;
 
-    printf("This is a pthread\n");
+    printf("This is a child pthread\n");
     while (1){
     bsize = recv(clientfd, buf, sizeof(buf), 0);
     buf[bsize] = '\0';
 
     printf("recv: %s\n", buf);
     if (strncmp(buf, "quit", 4) == 0){
+        p = client_link_get_addr_for_clientfd(&head, clientfd);
+        client_link_del(&head, p->ip, p->port);
         break;
     }
 
-    /*send(clientfd, buf, strlen(buf), 0);*/
+    broadcast_msg(&head, buf, strlen(buf));
     }
     close(clientfd);
     return;
@@ -65,6 +79,8 @@ int main(int argc, const char *argv[])
 
     listen(sockfd, 11);
 
+    clinet_link_init(&head);
+
     while (1){
         clientfd = accept(sockfd, (struct sockaddr *)&peer_addr, &addrlen);
         if (-1 == clientfd){
@@ -76,6 +92,8 @@ int main(int argc, const char *argv[])
         printf("ip      :%s\n", inet_ntoa(peer_addr.sin_addr));
         printf("port    :%d\n", ntohs(peer_addr.sin_port));
         printf("-----------------------\n");
+        //add to link
+        client_link_add(&head, inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port), "", clientfd);
 
         printf("pthread_create....\n");
         ret = pthread_create(&tid, NULL, handler, (void *)(long int)clientfd);
