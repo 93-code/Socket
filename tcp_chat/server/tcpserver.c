@@ -13,11 +13,13 @@
 CLIENT head; 
 void broadcast_msg(CLIENT *head, char *buf, int len){
     CLIENT *p = head->next;
-
+    
+    printf("len = %d\n", len);
     while (p != NULL){
         send(p->clientfd, buf, len, 0);
         p = p->next;
     }
+    return;
 }
 
 void *handler(void *arg){
