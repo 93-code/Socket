@@ -11,11 +11,13 @@
 #include <pthread.h>
 
 void *handler(void *arg){
+    int len;
     char buf[1024];
     int sockfd = (int)(long int)arg;
     while (1){
-        recv(sockfd, buf, sizeof(buf), 0);
-        printf("recv(%d) : %s\n", strlen(buf), buf);
+        len = recv(sockfd, buf, sizeof(buf), 0);
+        buf[len] = '\0';
+        printf("recv(%d) : %s\n", len, buf);
     }
 }
 
