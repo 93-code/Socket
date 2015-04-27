@@ -28,14 +28,16 @@ void *handler(void *arg){
     char buf[1024];
     int bsize;
 
-    printf("This is a child pthread\n");
+    /*printf("This is a child pthread\n");*/
     while (1){
     bsize = recv(clientfd, buf, sizeof(buf), 0);
     buf[bsize] = '\0';
 
     printf("recv: %s\n", buf);
     if (strncmp(buf, "quit", 4) == 0){
+        //返回的节点地址
         p = client_link_get_addr_for_clientfd(&head, clientfd);
+        //del client
         client_link_del(&head, p->ip, p->port);
         break;
     }
