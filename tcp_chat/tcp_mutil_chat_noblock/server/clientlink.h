@@ -6,7 +6,7 @@ typedef struct client{
     char ip[32];
     unsigned short port;
     char name[32];
-    int clientfd;
+    int clientfd;//通过一个唯一标示的socket，来从链表中获得此节点的信息，以便del指定节点
     
     struct client *next;
 }CLIENT;
