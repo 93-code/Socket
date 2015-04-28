@@ -100,10 +100,12 @@ int cmd_exe(int sockfd, int argc, char *argv[])
 		//  4.1 list
 		client_exe_list(sockfd);
 	} else if (strcmp(argv[0], "put") == 0 && 2 == argc){
+        client_exe_put(sockfd, argv[1]);
 		// 4.2 put
 		
 	} else if (strcmp(argv[0], "get") == 0 && 2 == argc){
 		// 4.3 get
+        client_exe_get(sockfd, argv[1]);
 	} else {
 		return -1;
 	}
